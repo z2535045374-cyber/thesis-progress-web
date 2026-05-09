@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thesis 每日进度记录</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f7f6;
+      --panel: #ffffff;
+      --text: #232323;
+      --muted: #626b68;
+      --line: #d7e0dd;
+      --accent: #2f6f73;
+      --accent-dark: #24585b;
+      --accent-soft: #e5f0ef;
+      --warn: #9a5b19;
+      --shadow: 0 18px 45px rgba(37, 55, 52, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background:
+        linear-gradient(180deg, rgba(244, 247, 246, 0.92), rgba(244, 247, 246, 1)),
+        var(--bg);
+    }
+
+    .page {
+      width: min(1040px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 40px 0;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      max-width: 560px;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+
+    .today {
+      flex: 0 0 auto;
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.68);
+      color: var(--muted);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .header-tools {
+      display: grid;
+      gap: 10px;
+      justify-items: end;
+    }
+
+    .language-toggle {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      padding: 0 14px;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel,
+    .history {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    form {
+      padding: 24px;
+    }
+
+    .field {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    label {
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfefd;
+      color: var(--text);
+      font: inherit;
+      line-height: 1.5;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    input,
+    select {
+      min-height: 44px;
+      padding: 9px 12px;
+    }
+
+    textarea {
+      min-height: 128px;
+      resize: vertical;
+      padding: 12px;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(47, 111, 115, 0.14);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-top: 22px;
+    }
+
+    button {
+      min-height: 44px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 16px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .primary:hover {
+      background: var(--accent-dark);
+    }
+
+    .secondary {
+      border: 1px solid var(--line);
+      background: #fbfefd;
+      color: var(--text);
+    }
+
+    .status-text {
+      min-height: 24px;
+      color: var(--accent-dark);
+      font-weight: 700;
+    }
+
+    .history {
+      overflow: hidden;
+    }
+
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 20px 20px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.08rem;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .entries {
+      display: grid;
+      gap: 12px;
+      max-height: 570px;
+      overflow: auto;
+      padding: 16px;
+    }
+
+    .empty {
+      margin: 0;
+      padding: 18px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .entry {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf9;
+    }
+
+    .entry-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .entry-date {
+      font-weight: 800;
+    }
+
+    .badge {
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+      font-size: 0.82rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .badge.pending {
+      background: #fff3df;
+      color: var(--warn);
+    }
+
+    .entry h3 {
+      margin: 0;
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+
+    .entry p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .entry-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .entry-actions button {
+      min-height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    @media (max-width: 780px) {
+      .page {
+        width: min(100% - 24px, 640px);
+        padding: 26px 0;
+      }
+
+      header {
+        display: grid;
+        gap: 14px;
+      }
+
+      main,
+      .row {
+        grid-template-columns: 1fr;
+      }
+
+      form {
+        padding: 18px;
+      }
+
+      .today {
+        width: fit-content;
+      }
+
+      .header-tools {
+        justify-items: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div>
+        <h1 data-i18n="pageTitle">Thesis 每日进度</h1>
+        <p class="subtitle" data-i18n="subtitle">每天写下任务、完成情况和备注，给论文进度留一条清晰的线索。</p>
+      </div>
+      <div class="header-tools">
+        <button class="language-toggle" type="button" id="languageToggle">English</button>
+        <div class="today" id="todayLabel"></div>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel" id="progressPanel" aria-label="今日进度表单">
+        <form id="progressForm">
+          <div class="row">
+            <div class="field">
+              <label for="date" data-i18n="dateLabel">日期</label>
+              <input id="date" name="date" type="date" required>
+            </div>
+            <div class="field">
+              <label for="status" data-i18n="statusLabel">完成情况</label>
+              <select id="status" name="status">
+                <option value="进行中">进行中</option>
+                <option value="已完成">已完成</option>
+                <option value="遇到阻碍">遇到阻碍</option>
+                <option value="推迟">推迟</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="title" data-i18n="titleLabel">标题</label>
+            <input id="title" name="title" type="text" placeholder="例如：整理文献综述结构" data-i18n-placeholder="titlePlaceholder" required>
+          </div>
+
+          <div class="field">
+            <label for="tasks" data-i18n="tasksLabel">今日任务</label>
+            <textarea id="tasks" name="tasks" placeholder="写下今天计划推进的具体事项..." data-i18n-placeholder="tasksPlaceholder" required></textarea>
+          </div>
+
+          <div class="field">
+            <label for="notes" data-i18n="notesLabel">备注</label>
+            <textarea id="notes" name="notes" placeholder="记录想法、困难、导师反馈或明天要接上的地方..." data-i18n-placeholder="notesPlaceholder"></textarea>
+          </div>
+
+          <div class="actions">
+            <button class="primary" type="submit" data-i18n="saveButton">保存记录</button>
+            <button class="secondary" type="button" id="newEntry" data-i18n="newButton">新建今日记录</button>
+            <button class="secondary" type="button" id="exportJson" data-i18n="exportJsonButton">导出 JSON</button>
+            <button class="secondary" type="button" id="importJson" data-i18n="importJsonButton">导入 JSON</button>
+            <button class="secondary" type="button" id="downloadCsv" data-i18n="downloadCsvButton">下载 CSV</button>
+            <input id="jsonFile" type="file" accept=".json,application/json" hidden>
+            <span class="status-text" id="saveStatus" aria-live="polite"></span>
+          </div>
+        </form>
+      </section>
+
+      <aside class="history" id="historyPanel" aria-label="历史记录">
+        <div class="history-header">
+          <h2 data-i18n="historyTitle">历史记录</h2>
+          <span class="count" id="entryCount">0 条</span>
+        </div>
+        <div class="entries" id="entries"></div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    const storageKey = "thesisDailyProgress";
+    const languageStorageKey = "thesisProgressLanguage";
+    const form = document.querySelector("#progressForm");
+    const entriesEl = document.querySelector("#entries");
+    const entryCount = document.querySelector("#entryCount");
+    const saveStatus = document.querySelector("#saveStatus");
+    const todayLabel = document.querySelector("#todayLabel");
+    const languageToggle = document.querySelector("#languageToggle");
+    const progressPanel = document.querySelector("#progressPanel");
+    const historyPanel = document.querySelector("#historyPanel");
+    const newEntry = document.querySelector("#newEntry");
+    const exportJson = document.querySelector("#exportJson");
+    const importJson = document.querySelector("#importJson");
+    const downloadCsv = document.querySelector("#downloadCsv");
+    const jsonFile = document.querySelector("#jsonFile");
+
+    const dateInput = document.querySelector("#date");
+    const titleInput = document.querySelector("#title");
+    const tasksInput = document.querySelector("#tasks");
+    const statusInput = document.querySelector("#status");
+    const notesInput = document.querySelector("#notes");
+
+    const translations = {
+      zh: {
+        htmlLang: "zh-CN",
+        locale: "zh-CN",
+        documentTitle: "Thesis 每日进度记录",
+        languageButton: "English",
+        languageAria: "Switch to English",
+        pageTitle: "Thesis 每日进度",
+        subtitle: "每天写下任务、完成情况和备注，给论文进度留一条清晰的线索。",
+        formAria: "今日进度表单",
+        historyAria: "历史记录",
+        dateLabel: "日期",
+        statusLabel: "完成情况",
+        titleLabel: "标题",
+        tasksLabel: "今日任务",
+        notesLabel: "备注",
+        titlePlaceholder: "例如：整理文献综述结构",
+        tasksPlaceholder: "写下今天计划推进的具体事项...",
+        notesPlaceholder: "记录想法、困难、导师反馈或明天要接上的地方...",
+        saveButton: "保存记录",
+        newButton: "新建今日记录",
+        exportJsonButton: "导出 JSON",
+        importJsonButton: "导入 JSON",
+        downloadCsvButton: "下载 CSV",
+        historyTitle: "历史记录",
+        empty: "还没有记录。保存今天的进度后，这里会显示历史。",
+        editButton: "编辑",
+        deleteButton: "删除",
+        count: (amount) => `${amount} 条`,
+        csvHeaders: ["日期", "标题", "今日任务", "完成情况", "备注", "更新时间"],
+        statuses: {
+          "进行中": "进行中",
+          "已完成": "已完成",
+          "遇到阻碍": "遇到阻碍",
+          "推迟": "推迟"
+        },
+        messages: {
+          fillRequired: "请填写标题和今日任务",
+          saved: "已保存",
+          noJsonRecords: "暂无记录可导出",
+          jsonExported: "JSON 已导出",
+          noImportRecords: "没有找到可导入的记录",
+          imported: (amount) => `已导入 ${amount} 条记录`,
+          invalidJson: "JSON 文件格式不正确",
+          noCsvRecords: "暂无记录可下载",
+          csvDownloaded: "CSV 已下载",
+          editing: (date) => `正在编辑 ${date}`,
+          deleted: "已删除"
+        }
+      },
+      en: {
+        htmlLang: "en",
+        locale: "en-AU",
+        documentTitle: "Thesis Daily Progress Tracker",
+        languageButton: "中文",
+        languageAria: "切换到中文",
+        pageTitle: "Thesis Daily Progress",
+        subtitle: "Capture today's tasks, progress, and notes so your thesis work stays easy to trace.",
+        formAria: "Daily progress form",
+        historyAria: "History",
+        dateLabel: "Date",
+        statusLabel: "Status",
+        titleLabel: "Title",
+        tasksLabel: "Today's Tasks",
+        notesLabel: "Notes",
+        titlePlaceholder: "Example: Refine the literature review structure",
+        tasksPlaceholder: "Write the specific thesis tasks you plan to move forward today...",
+        notesPlaceholder: "Add ideas, blockers, supervisor feedback, or what to pick up tomorrow...",
+        saveButton: "Save Entry",
+        newButton: "New Today",
+        exportJsonButton: "Export JSON",
+        importJsonButton: "Import JSON",
+        downloadCsvButton: "Download CSV",
+        historyTitle: "History",
+        empty: "No entries yet. Save today's progress and your history will appear here.",
+        editButton: "Edit",
+        deleteButton: "Delete",
+        count: (amount) => `${amount} ${amount === 1 ? "entry" : "entries"}`,
+        csvHeaders: ["Date", "Title", "Today's Tasks", "Status", "Notes", "Updated At"],
+        statuses: {
+          "进行中": "In progress",
+          "已完成": "Completed",
+          "遇到阻碍": "Blocked",
+          "推迟": "Postponed"
+        },
+        messages: {
+          fillRequired: "Please fill in the title and today's tasks",
+          saved: "Saved",
+          noJsonRecords: "No records to export",
+          jsonExported: "JSON exported",
+          noImportRecords: "No valid entries found in this file",
+          imported: (amount) => `Imported ${amount} ${amount === 1 ? "entry" : "entries"}`,
+          invalidJson: "This JSON file is not valid",
+          noCsvRecords: "No records to download",
+          csvDownloaded: "CSV downloaded",
+          editing: (date) => `Editing ${date}`,
+          deleted: "Deleted"
+        }
+      }
+    };
+
+    const statusAliases = {
+      "In progress": "进行中",
+      "Completed": "已完成",
+      "Blocked": "遇到阻碍",
+      "Postponed": "推迟"
+    };
+
+    const today = new Date();
+    const todayIso = toIsoDate(today);
+    let currentLanguage = localStorage.getItem(languageStorageKey) === "en" ? "en" : "zh";
+
+    let entries = loadEntries();
+    dateInput.value = todayIso;
+    applyLanguage();
+    hydrateToday();
+    renderEntries();
+
+    languageToggle.addEventListener("click", () => {
+      currentLanguage = currentLanguage === "zh" ? "en" : "zh";
+      localStorage.setItem(languageStorageKey, currentLanguage);
+      saveStatus.textContent = "";
+      applyLanguage();
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const entry = {
+        date: dateInput.value,
+        title: titleInput.value.trim(),
+        tasks: tasksInput.value.trim(),
+        status: statusInput.value,
+        notes: notesInput.value.trim(),
+        updatedAt: new Date().toISOString()
+      };
+
+      if (!entry.title || !entry.tasks) {
+        setStatus("fillRequired");
+        return;
+      }
+
+      const existingIndex = entries.findIndex((item) => item.date === entry.date);
+      if (existingIndex >= 0) {
+        entries[existingIndex] = entry;
+      } else {
+        entries.push(entry);
+      }
+
+      entries.sort((a, b) => b.date.localeCompare(a.date));
+      localStorage.setItem(storageKey, JSON.stringify(entries));
+      renderEntries();
+      setStatus("saved");
+
+      window.setTimeout(() => {
+        saveStatus.textContent = "";
+      }, 1800);
+    });
+
+    newEntry.addEventListener("click", () => {
+      dateInput.value = todayIso;
+      titleInput.value = "";
+      tasksInput.value = "";
+      statusInput.value = "进行中";
+      notesInput.value = "";
+      saveStatus.textContent = "";
+      titleInput.focus();
+    });
+
+    exportJson.addEventListener("click", () => {
+      if (!entries.length) {
+        setStatus("noJsonRecords");
+        return;
+      }
+
+      const content = JSON.stringify(entries, null, 2);
+      downloadFile(content, `thesis-progress-${todayIso}.json`, "application/json");
+      setStatus("jsonExported");
+    });
+
+    importJson.addEventListener("click", () => {
+      jsonFile.value = "";
+      jsonFile.click();
+    });
+
+    jsonFile.addEventListener("change", async () => {
+      const file = jsonFile.files[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const imported = normalizeImportedEntries(JSON.parse(text));
+
+        if (!imported.length) {
+          setStatus("noImportRecords");
+          return;
+        }
+
+        const merged = new Map(entries.map((entry) => [entry.date, entry]));
+        imported.forEach((entry) => merged.set(entry.date, entry));
+        entries = Array.from(merged.values()).sort((a, b) => b.date.localeCompare(a.date));
+        localStorage.setItem(storageKey, JSON.stringify(entries));
+        hydrateToday();
+        renderEntries();
+        setStatus("imported", imported.length);
+      } catch {
+        setStatus("invalidJson");
+      }
+    });
+
+    downloadCsv.addEventListener("click", () => {
+      if (!entries.length) {
+        setStatus("noCsvRecords");
+        return;
+      }
+
+      const rows = [
+        getCopy().csvHeaders,
+        ...entries.map((entry) => [
+          entry.date,
+          entry.title,
+          entry.tasks,
+          displayStatus(entry.status),
+          entry.notes || "",
+          entry.updatedAt || ""
+        ])
+      ];
+      const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+      downloadFile("\ufeff" + csv, `thesis-progress-${todayIso}.csv`, "text/csv;charset=utf-8");
+      setStatus("csvDownloaded");
+    });
+
+    entriesEl.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button) return;
+
+      const date = button.dataset.date;
+      const entry = entries.find((item) => item.date === date);
+      if (!entry) return;
+
+      if (button.dataset.action === "edit") {
+        fillForm(entry);
+        setStatus("editing", entry.date);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      if (button.dataset.action === "delete") {
+        entries = entries.filter((item) => item.date !== date);
+        localStorage.setItem(storageKey, JSON.stringify(entries));
+        renderEntries();
+        setStatus("deleted");
+      }
+    });
+
+    function hydrateToday() {
+      const todayEntry = entries.find((entry) => entry.date === todayIso);
+      if (todayEntry) {
+        fillForm(todayEntry);
+      }
+    }
+
+    function fillForm(entry) {
+      dateInput.value = entry.date;
+      titleInput.value = entry.title;
+      tasksInput.value = entry.tasks;
+      statusInput.value = normalizeStatus(entry.status);
+      notesInput.value = entry.notes || "";
+    }
+
+    function renderEntries() {
+      const copy = getCopy();
+      entryCount.textContent = copy.count(entries.length);
+
+      if (!entries.length) {
+        entriesEl.innerHTML = `<p class="empty">${escapeHtml(copy.empty)}</p>`;
+        return;
+      }
+
+      entriesEl.innerHTML = entries.map((entry) => {
+        const isPending = normalizeStatus(entry.status) !== "已完成";
+        return `
+          <article class="entry">
+            <div class="entry-top">
+              <span class="entry-date">${escapeHtml(entry.date)}</span>
+              <span class="badge ${isPending ? "pending" : ""}">${escapeHtml(displayStatus(entry.status))}</span>
+            </div>
+            <h3>${escapeHtml(entry.title)}</h3>
+            <p>${escapeHtml(entry.tasks)}</p>
+            ${entry.notes ? `<p>${escapeHtml(entry.notes)}</p>` : ""}
+            <div class="entry-actions">
+              <button type="button" data-action="edit" data-date="${escapeHtml(entry.date)}">${escapeHtml(copy.editButton)}</button>
+              <button type="button" data-action="delete" data-date="${escapeHtml(entry.date)}">${escapeHtml(copy.deleteButton)}</button>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function loadEntries() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        return Array.isArray(saved) ? saved : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function normalizeImportedEntries(data) {
+      const list = Array.isArray(data) ? data : data.entries;
+      if (!Array.isArray(list)) return [];
+
+      return list
+        .map((entry) => ({
+          date: String(entry.date || "").trim(),
+          title: String(entry.title || "").trim(),
+          tasks: String(entry.tasks || "").trim(),
+          status: normalizeStatus(String(entry.status || "进行中").trim()),
+          notes: String(entry.notes || "").trim(),
+          updatedAt: String(entry.updatedAt || new Date().toISOString()).trim()
+        }))
+        .filter((entry) => /^\d{4}-\d{2}-\d{2}$/.test(entry.date) && entry.title && entry.tasks);
+    }
+
+    function applyLanguage() {
+      const copy = getCopy();
+      document.documentElement.lang = copy.htmlLang;
+      document.title = copy.documentTitle;
+      progressPanel.setAttribute("aria-label", copy.formAria);
+      historyPanel.setAttribute("aria-label", copy.historyAria);
+      languageToggle.textContent = copy.languageButton;
+      languageToggle.setAttribute("aria-label", copy.languageAria);
+      todayLabel.textContent = today.toLocaleDateString(copy.locale, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        weekday: "long"
+      });
+
+      document.querySelectorAll("[data-i18n]").forEach((element) => {
+        element.textContent = copy[element.dataset.i18n];
+      });
+
+      document.querySelectorAll("[data-i18n-placeholder]").forEach((element) => {
+        element.placeholder = copy[element.dataset.i18nPlaceholder];
+      });
+
+      Array.from(statusInput.options).forEach((option) => {
+        option.textContent = copy.statuses[option.value] || option.value;
+      });
+
+      renderEntries();
+    }
+
+    function getCopy() {
+      return translations[currentLanguage];
+    }
+
+    function displayStatus(status) {
+      const normalized = normalizeStatus(status);
+      return getCopy().statuses[normalized] || normalized;
+    }
+
+    function normalizeStatus(status) {
+      return statusAliases[status] || status || "进行中";
+    }
+
+    function setStatus(key, value) {
+      const message = getCopy().messages[key];
+      saveStatus.textContent = typeof message === "function" ? message(value) : message;
+    }
+
+    function downloadFile(content, filename, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeCsv(value) {
+      const text = String(value).replaceAll('"', '""');
+      return `"${text}"`;
+    }
+
+    function toIsoDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>
