@@ -22,19 +22,23 @@ https://pagedrop.dev/s/iPBzYGSx
 
 ## 使用方式 / How To Use
 
-中文：打开网页后，填写日期、完成情况、标题、今日任务和备注，然后点击“保存记录”。记录会显示在右侧历史列表中。
+中文：打开网页后，填写日期、完成情况、标题、今日任务和备注，也可以上传当天完成的文件，然后点击“保存记录”。记录和附件会显示在右侧历史列表中。
 
-English: Open the website, enter the date, status, title, today's tasks, and notes, then click "Save Entry". Saved entries will appear in the history list on the right.
+English: Open the website, enter the date, status, title, today's tasks, and notes, optionally upload the files completed that day, then click "Save Entry". Saved entries and attachments will appear in the history list on the right.
 
-中文：网页支持中英文切换，也支持导出 JSON、导入 JSON 和下载 CSV。
+中文：网页支持中英文切换，也支持导出 JSON、导入 JSON、下载 CSV 和下载包含附件的 ZIP 记录包。
 
-English: The website supports Chinese/English switching, JSON export, JSON import, and CSV download.
+English: The website supports Chinese/English switching, JSON export, JSON import, CSV download, and ZIP bundle download with attachments.
 
 ## 数据说明 / Data Notes
 
 中文：当前记录保存在每个访问者自己的浏览器 `localStorage` 中。别人打开公开链接后可以使用网页，但不会自动看到你电脑浏览器里已经保存的历史记录。
 
 English: Entries are currently stored in each visitor's own browser `localStorage`. Other people can open and use the public website, but they will not automatically see the history saved in your browser.
+
+中文：附件也会保存在浏览器本地空间里。较大的文件可能超过浏览器存储限制，建议保存论文草稿、截图、小型数据文件等轻量附件。
+
+English: Attachments are also stored in the browser's local storage. Large files may exceed browser storage limits, so this works best for thesis drafts, screenshots, small data files, and other lightweight attachments.
 
 中文：如果需要多人看到同一份进度，需要把数据接到在线数据库，或改成共享的静态数据文件。
 
