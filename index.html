@@ -196,6 +196,59 @@
       font-weight: 700;
     }
 
+    .attachment-hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
+    .selected-files,
+    .entry-files {
+      display: grid;
+      gap: 8px;
+    }
+
+    .selected-files {
+      margin-top: 4px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 42px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfefd;
+    }
+
+    .file-name {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-weight: 700;
+      line-height: 1.35;
+    }
+
+    .file-meta {
+      color: var(--muted);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+
+    .file-item button {
+      flex: 0 0 auto;
+      min-height: 32px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
     .history {
       overflow: hidden;
     }
@@ -287,6 +340,7 @@
 
     .entry-actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
     }
 
@@ -377,12 +431,20 @@
             <textarea id="notes" name="notes" placeholder="记录想法、困难、导师反馈或明天要接上的地方..." data-i18n-placeholder="notesPlaceholder"></textarea>
           </div>
 
+          <div class="field">
+            <label for="attachments" data-i18n="attachmentsLabel">每日文件</label>
+            <input id="attachments" name="attachments" type="file" multiple>
+            <p class="attachment-hint" data-i18n="attachmentsHint">上传今天完成的文档、图片或数据文件；保存记录时会一起保存。</p>
+            <div class="selected-files" id="selectedFiles" aria-live="polite"></div>
+          </div>
+
           <div class="actions">
             <button class="primary" type="submit" data-i18n="saveButton">保存记录</button>
             <button class="secondary" type="button" id="newEntry" data-i18n="newButton">新建今日记录</button>
             <button class="secondary" type="button" id="exportJson" data-i18n="exportJsonButton">导出 JSON</button>
             <button class="secondary" type="button" id="importJson" data-i18n="importJsonButton">导入 JSON</button>
             <button class="secondary" type="button" id="downloadCsv" data-i18n="downloadCsvButton">下载 CSV</button>
+            <button class="secondary" type="button" id="downloadBundle" data-i18n="downloadBundleButton">下载记录包</button>
             <input id="jsonFile" type="file" accept=".json,application/json" hidden>
             <span class="status-text" id="saveStatus" aria-live="polite"></span>
           </div>
@@ -414,7 +476,10 @@
     const exportJson = document.querySelector("#exportJson");
     const importJson = document.querySelector("#importJson");
     const downloadCsv = document.querySelector("#downloadCsv");
+    const downloadBundle = document.querySelector("#downloadBundle");
     const jsonFile = document.querySelector("#jsonFile");
+    const attachmentsInput = document.querySelector("#attachments");
+    const selectedFiles = document.querySelector("#selectedFiles");
 
     const dateInput = document.querySelector("#date");
     const titleInput = document.querySelector("#title");
@@ -441,17 +506,23 @@
         titlePlaceholder: "例如：整理文献综述结构",
         tasksPlaceholder: "写下今天计划推进的具体事项...",
         notesPlaceholder: "记录想法、困难、导师反馈或明天要接上的地方...",
+        attachmentsLabel: "每日文件",
+        attachmentsHint: "上传今天完成的文档、图片或数据文件；保存记录时会一起保存。",
         saveButton: "保存记录",
         newButton: "新建今日记录",
         exportJsonButton: "导出 JSON",
         importJsonButton: "导入 JSON",
         downloadCsvButton: "下载 CSV",
+        downloadBundleButton: "下载记录包",
         historyTitle: "历史记录",
         empty: "还没有记录。保存今天的进度后，这里会显示历史。",
         editButton: "编辑",
         deleteButton: "删除",
+        removeFileButton: "移除",
+        downloadFileButton: "下载",
+        entryFilesTitle: "每日文件",
         count: (amount) => `${amount} 条`,
-        csvHeaders: ["日期", "标题", "今日任务", "完成情况", "备注", "更新时间"],
+        csvHeaders: ["日期", "标题", "今日任务", "完成情况", "备注", "附件", "更新时间"],
         statuses: {
           "进行中": "进行中",
           "已完成": "已完成",
@@ -461,6 +532,9 @@
         messages: {
           fillRequired: "请填写标题和今日任务",
           saved: "已保存",
+          filesAdded: (amount) => `已添加 ${amount} 个文件`,
+          fileReadError: "文件读取失败，请重试",
+          storageFull: "保存失败：附件太大，浏览器本地存储空间不足",
           noJsonRecords: "暂无记录可导出",
           jsonExported: "JSON 已导出",
           noImportRecords: "没有找到可导入的记录",
@@ -468,6 +542,7 @@
           invalidJson: "JSON 文件格式不正确",
           noCsvRecords: "暂无记录可下载",
           csvDownloaded: "CSV 已下载",
+          bundleDownloaded: "记录包已下载",
           editing: (date) => `正在编辑 ${date}`,
           deleted: "已删除"
         }
@@ -490,17 +565,23 @@
         titlePlaceholder: "Example: Refine the literature review structure",
         tasksPlaceholder: "Write the specific thesis tasks you plan to move forward today...",
         notesPlaceholder: "Add ideas, blockers, supervisor feedback, or what to pick up tomorrow...",
+        attachmentsLabel: "Daily Files",
+        attachmentsHint: "Upload the documents, images, or data files completed today; they will be saved with this entry.",
         saveButton: "Save Entry",
         newButton: "New Today",
         exportJsonButton: "Export JSON",
         importJsonButton: "Import JSON",
         downloadCsvButton: "Download CSV",
+        downloadBundleButton: "Download Bundle",
         historyTitle: "History",
         empty: "No entries yet. Save today's progress and your history will appear here.",
         editButton: "Edit",
         deleteButton: "Delete",
+        removeFileButton: "Remove",
+        downloadFileButton: "Download",
+        entryFilesTitle: "Daily Files",
         count: (amount) => `${amount} ${amount === 1 ? "entry" : "entries"}`,
-        csvHeaders: ["Date", "Title", "Today's Tasks", "Status", "Notes", "Updated At"],
+        csvHeaders: ["Date", "Title", "Today's Tasks", "Status", "Notes", "Attachments", "Updated At"],
         statuses: {
           "进行中": "In progress",
           "已完成": "Completed",
@@ -510,6 +591,9 @@
         messages: {
           fillRequired: "Please fill in the title and today's tasks",
           saved: "Saved",
+          filesAdded: (amount) => `Added ${amount} ${amount === 1 ? "file" : "files"}`,
+          fileReadError: "Could not read the selected file. Please try again",
+          storageFull: "Save failed: attachments are too large for browser storage",
           noJsonRecords: "No records to export",
           jsonExported: "JSON exported",
           noImportRecords: "No valid entries found in this file",
@@ -517,6 +601,7 @@
           invalidJson: "This JSON file is not valid",
           noCsvRecords: "No records to download",
           csvDownloaded: "CSV downloaded",
+          bundleDownloaded: "Bundle downloaded",
           editing: (date) => `Editing ${date}`,
           deleted: "Deleted"
         }
@@ -535,6 +620,7 @@
     let currentLanguage = localStorage.getItem(languageStorageKey) === "en" ? "en" : "zh";
 
     let entries = loadEntries();
+    let pendingAttachments = [];
     dateInput.value = todayIso;
     applyLanguage();
     hydrateToday();
@@ -556,6 +642,7 @@
         tasks: tasksInput.value.trim(),
         status: statusInput.value,
         notes: notesInput.value.trim(),
+        attachments: cloneAttachments(pendingAttachments),
         updatedAt: new Date().toISOString()
       };
 
@@ -564,15 +651,16 @@
         return;
       }
 
-      const existingIndex = entries.findIndex((item) => item.date === entry.date);
+      const nextEntries = [...entries];
+      const existingIndex = nextEntries.findIndex((item) => item.date === entry.date);
       if (existingIndex >= 0) {
-        entries[existingIndex] = entry;
+        nextEntries[existingIndex] = entry;
       } else {
-        entries.push(entry);
+        nextEntries.push(entry);
       }
 
-      entries.sort((a, b) => b.date.localeCompare(a.date));
-      localStorage.setItem(storageKey, JSON.stringify(entries));
+      nextEntries.sort((a, b) => b.date.localeCompare(a.date));
+      if (!persistEntries(nextEntries)) return;
       renderEntries();
       setStatus("saved");
 
@@ -587,8 +675,35 @@
       tasksInput.value = "";
       statusInput.value = "进行中";
       notesInput.value = "";
+      pendingAttachments = [];
+      renderSelectedFiles();
       saveStatus.textContent = "";
       titleInput.focus();
+    });
+
+    attachmentsInput.addEventListener("change", async () => {
+      const files = Array.from(attachmentsInput.files || []);
+      if (!files.length) return;
+
+      try {
+        const attachments = await Promise.all(files.map(fileToAttachment));
+        pendingAttachments = [...pendingAttachments, ...attachments];
+        renderSelectedFiles();
+        setStatus("filesAdded", attachments.length);
+      } catch {
+        setStatus("fileReadError");
+      } finally {
+        attachmentsInput.value = "";
+      }
+    });
+
+    selectedFiles.addEventListener("click", (event) => {
+      const button = event.target.closest("button");
+      if (!button || button.dataset.action !== "remove-pending-file") return;
+
+      const index = Number(button.dataset.index);
+      pendingAttachments = pendingAttachments.filter((_, itemIndex) => itemIndex !== index);
+      renderSelectedFiles();
     });
 
     exportJson.addEventListener("click", () => {
@@ -638,20 +753,40 @@
         return;
       }
 
-      const rows = [
-        getCopy().csvHeaders,
-        ...entries.map((entry) => [
-          entry.date,
-          entry.title,
-          entry.tasks,
-          displayStatus(entry.status),
-          entry.notes || "",
-          entry.updatedAt || ""
-        ])
-      ];
-      const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+      const csv = createCsv(entries);
       downloadFile("\ufeff" + csv, `thesis-progress-${todayIso}.csv`, "text/csv;charset=utf-8");
       setStatus("csvDownloaded");
+    });
+
+    downloadBundle.addEventListener("click", () => {
+      if (!entries.length) {
+        setStatus("noCsvRecords");
+        return;
+      }
+
+      const zipFiles = [
+        {
+          path: `thesis-progress-${todayIso}.json`,
+          data: encodeText(JSON.stringify(entries, null, 2))
+        },
+        {
+          path: `thesis-progress-${todayIso}.csv`,
+          data: encodeText(createCsv(entries))
+        }
+      ];
+
+      entries.forEach((entry) => {
+        normalizeAttachments(entry.attachments).forEach((attachment, index) => {
+          zipFiles.push({
+            path: `attachments/${entry.date}/${String(index + 1).padStart(2, "0")}-${sanitizeFileName(attachment.name)}`,
+            data: dataUrlToBytes(attachment.dataUrl)
+          });
+        });
+      });
+
+      const zip = createZip(zipFiles);
+      downloadBlob(zip, `thesis-progress-${todayIso}.zip`);
+      setStatus("bundleDownloaded");
     });
 
     entriesEl.addEventListener("click", (event) => {
@@ -662,6 +797,14 @@
       const entry = entries.find((item) => item.date === date);
       if (!entry) return;
 
+      if (button.dataset.action === "download-attachment") {
+        const attachment = normalizeAttachments(entry.attachments)[Number(button.dataset.index)];
+        if (attachment) {
+          downloadAttachment(attachment);
+        }
+        return;
+      }
+
       if (button.dataset.action === "edit") {
         fillForm(entry);
         setStatus("editing", entry.date);
@@ -669,8 +812,8 @@
       }
 
       if (button.dataset.action === "delete") {
-        entries = entries.filter((item) => item.date !== date);
-        localStorage.setItem(storageKey, JSON.stringify(entries));
+        const nextEntries = entries.filter((item) => item.date !== date);
+        if (!persistEntries(nextEntries)) return;
         renderEntries();
         setStatus("deleted");
       }
@@ -689,6 +832,8 @@
       tasksInput.value = entry.tasks;
       statusInput.value = normalizeStatus(entry.status);
       notesInput.value = entry.notes || "";
+      pendingAttachments = cloneAttachments(normalizeAttachments(entry.attachments));
+      renderSelectedFiles();
     }
 
     function renderEntries() {
@@ -702,6 +847,7 @@
 
       entriesEl.innerHTML = entries.map((entry) => {
         const isPending = normalizeStatus(entry.status) !== "已完成";
+        const attachments = normalizeAttachments(entry.attachments);
         return `
           <article class="entry">
             <div class="entry-top">
@@ -711,6 +857,20 @@
             <h3>${escapeHtml(entry.title)}</h3>
             <p>${escapeHtml(entry.tasks)}</p>
             ${entry.notes ? `<p>${escapeHtml(entry.notes)}</p>` : ""}
+            ${attachments.length ? `
+              <div class="entry-files">
+                <strong>${escapeHtml(copy.entryFilesTitle)}</strong>
+                ${attachments.map((attachment, index) => `
+                  <div class="file-item">
+                    <div>
+                      <div class="file-name">${escapeHtml(attachment.name)}</div>
+                      <div class="file-meta">${escapeHtml(formatFileSize(attachment.size))}</div>
+                    </div>
+                    <button type="button" data-action="download-attachment" data-date="${escapeHtml(entry.date)}" data-index="${index}">${escapeHtml(copy.downloadFileButton)}</button>
+                  </div>
+                `).join("")}
+              </div>
+            ` : ""}
             <div class="entry-actions">
               <button type="button" data-action="edit" data-date="${escapeHtml(entry.date)}">${escapeHtml(copy.editButton)}</button>
               <button type="button" data-action="delete" data-date="${escapeHtml(entry.date)}">${escapeHtml(copy.deleteButton)}</button>
@@ -729,6 +889,17 @@
       }
     }
 
+    function persistEntries(nextEntries) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(nextEntries));
+        entries = nextEntries;
+        return true;
+      } catch {
+        setStatus("storageFull");
+        return false;
+      }
+    }
+
     function normalizeImportedEntries(data) {
       const list = Array.isArray(data) ? data : data.entries;
       if (!Array.isArray(list)) return [];
@@ -740,9 +911,26 @@
           tasks: String(entry.tasks || "").trim(),
           status: normalizeStatus(String(entry.status || "进行中").trim()),
           notes: String(entry.notes || "").trim(),
+          attachments: normalizeImportedAttachments(entry.attachments),
           updatedAt: String(entry.updatedAt || new Date().toISOString()).trim()
         }))
         .filter((entry) => /^\d{4}-\d{2}-\d{2}$/.test(entry.date) && entry.title && entry.tasks);
+    }
+
+    function normalizeImportedAttachments(attachments) {
+      if (!Array.isArray(attachments)) return [];
+
+      return attachments
+        .map((attachment) => ({
+          id: String(attachment.id || createAttachmentId()),
+          name: String(attachment.name || "").trim(),
+          type: String(attachment.type || "application/octet-stream").trim(),
+          size: Number(attachment.size || 0),
+          lastModified: Number(attachment.lastModified || Date.now()),
+          dataUrl: String(attachment.dataUrl || "").trim(),
+          addedAt: String(attachment.addedAt || new Date().toISOString()).trim()
+        }))
+        .filter((attachment) => attachment.name && attachment.dataUrl.startsWith("data:"));
     }
 
     function applyLanguage() {
@@ -772,6 +960,7 @@
         option.textContent = copy.statuses[option.value] || option.value;
       });
 
+      renderSelectedFiles();
       renderEntries();
     }
 
@@ -793,8 +982,99 @@
       saveStatus.textContent = typeof message === "function" ? message(value) : message;
     }
 
+    function renderSelectedFiles() {
+      const copy = getCopy();
+      selectedFiles.innerHTML = pendingAttachments.map((attachment, index) => `
+        <div class="file-item">
+          <div>
+            <div class="file-name">${escapeHtml(attachment.name)}</div>
+            <div class="file-meta">${escapeHtml(formatFileSize(attachment.size))}</div>
+          </div>
+          <button type="button" data-action="remove-pending-file" data-index="${index}">${escapeHtml(copy.removeFileButton)}</button>
+        </div>
+      `).join("");
+    }
+
+    function fileToAttachment(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+          resolve({
+            id: createAttachmentId(),
+            name: file.name,
+            type: file.type || "application/octet-stream",
+            size: file.size,
+            lastModified: file.lastModified,
+            dataUrl: reader.result,
+            addedAt: new Date().toISOString()
+          });
+        });
+        reader.addEventListener("error", reject);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function cloneAttachments(attachments) {
+      return normalizeAttachments(attachments).map((attachment) => ({ ...attachment }));
+    }
+
+    function normalizeAttachments(attachments) {
+      return Array.isArray(attachments)
+        ? attachments.filter((attachment) => attachment && attachment.name && String(attachment.dataUrl || "").startsWith("data:"))
+        : [];
+    }
+
+    function createAttachmentId() {
+      if (crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function downloadAttachment(attachment) {
+      const link = document.createElement("a");
+      link.href = attachment.dataUrl;
+      link.download = attachment.name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
+
+    function createCsv(sourceEntries) {
+      const rows = [
+        getCopy().csvHeaders,
+        ...sourceEntries.map((entry) => [
+          entry.date,
+          entry.title,
+          entry.tasks,
+          displayStatus(entry.status),
+          entry.notes || "",
+          formatAttachmentList(entry.attachments),
+          entry.updatedAt || ""
+        ])
+      ];
+      return rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+    }
+
+    function formatAttachmentList(attachments) {
+      return normalizeAttachments(attachments)
+        .map((attachment) => `${attachment.name} (${formatFileSize(attachment.size)})`)
+        .join("; ");
+    }
+
+    function formatFileSize(size) {
+      const bytes = Number(size || 0);
+      if (bytes < 1024) return `${bytes} B`;
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
     function downloadFile(content, filename, type) {
       const blob = new Blob([content], { type });
+      downloadBlob(blob, filename);
+    }
+
+    function downloadBlob(blob, filename) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -809,6 +1089,112 @@
       const text = String(value).replaceAll('"', '""');
       return `"${text}"`;
     }
+
+    function encodeText(value) {
+      return new TextEncoder().encode(value);
+    }
+
+    function dataUrlToBytes(dataUrl) {
+      const [, base64 = ""] = dataUrl.split(",");
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+      return bytes;
+    }
+
+    function sanitizeFileName(name) {
+      return String(name || "attachment").replace(/[\\/:*?"<>|]+/g, "-");
+    }
+
+    function createZip(files) {
+      const chunks = [];
+      const centralDirectory = [];
+      let offset = 0;
+      const now = new Date();
+      const dosTime = getDosTime(now);
+      const dosDate = getDosDate(now);
+
+      files.forEach((file) => {
+        const nameBytes = encodeText(file.path);
+        const data = file.data;
+        const crc = crc32(data);
+
+        const localHeader = new Uint8Array(30 + nameBytes.length);
+        const localView = new DataView(localHeader.buffer);
+        localView.setUint32(0, 0x04034b50, true);
+        localView.setUint16(4, 20, true);
+        localView.setUint16(6, 0x0800, true);
+        localView.setUint16(8, 0, true);
+        localView.setUint16(10, dosTime, true);
+        localView.setUint16(12, dosDate, true);
+        localView.setUint32(14, crc, true);
+        localView.setUint32(18, data.length, true);
+        localView.setUint32(22, data.length, true);
+        localView.setUint16(26, nameBytes.length, true);
+        localHeader.set(nameBytes, 30);
+        chunks.push(localHeader, data);
+
+        const centralHeader = new Uint8Array(46 + nameBytes.length);
+        const centralView = new DataView(centralHeader.buffer);
+        centralView.setUint32(0, 0x02014b50, true);
+        centralView.setUint16(4, 20, true);
+        centralView.setUint16(6, 20, true);
+        centralView.setUint16(8, 0x0800, true);
+        centralView.setUint16(10, 0, true);
+        centralView.setUint16(12, dosTime, true);
+        centralView.setUint16(14, dosDate, true);
+        centralView.setUint32(16, crc, true);
+        centralView.setUint32(20, data.length, true);
+        centralView.setUint32(24, data.length, true);
+        centralView.setUint16(28, nameBytes.length, true);
+        centralView.setUint32(42, offset, true);
+        centralHeader.set(nameBytes, 46);
+        centralDirectory.push(centralHeader);
+
+        offset += localHeader.length + data.length;
+      });
+
+      const centralSize = centralDirectory.reduce((total, chunk) => total + chunk.length, 0);
+      const endRecord = new Uint8Array(22);
+      const endView = new DataView(endRecord.buffer);
+      endView.setUint32(0, 0x06054b50, true);
+      endView.setUint16(8, files.length, true);
+      endView.setUint16(10, files.length, true);
+      endView.setUint32(12, centralSize, true);
+      endView.setUint32(16, offset, true);
+
+      return new Blob([...chunks, ...centralDirectory, endRecord], { type: "application/zip" });
+    }
+
+    function getDosTime(date) {
+      return (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2);
+    }
+
+    function getDosDate(date) {
+      return ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
+    }
+
+    function crc32(data) {
+      let crc = 0xffffffff;
+      for (let index = 0; index < data.length; index += 1) {
+        crc = (crc >>> 8) ^ crcTable[(crc ^ data[index]) & 0xff];
+      }
+      return (crc ^ 0xffffffff) >>> 0;
+    }
+
+    const crcTable = (() => {
+      const table = new Uint32Array(256);
+      for (let index = 0; index < 256; index += 1) {
+        let current = index;
+        for (let bit = 0; bit < 8; bit += 1) {
+          current = current & 1 ? 0xedb88320 ^ (current >>> 1) : current >>> 1;
+        }
+        table[index] = current >>> 0;
+      }
+      return table;
+    })();
 
     function toIsoDate(date) {
       const year = date.getFullYear();
